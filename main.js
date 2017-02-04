@@ -1,3 +1,4 @@
+var FPS = 60;
 // 創造 img HTML 元素，並放入變數中
 var bgImg = document.createElement("img");
 var enemyImg = document.createElement("img");
@@ -17,26 +18,40 @@ var canvas = document.getElementById("game-canvas");
 var ctx = canvas.getContext("2d");
 
 function draw(){
+	enemy.move();
 	// 將背景圖片畫在 canvas 上的 (0,0) 位置
 	ctx.drawImage(bgImg,0,0);
 	ctx.drawImage(enemyImg,enemy.x,enemy.y);
 	ctx.drawImage(btnImg,640-64,480-64,64,64);
 	if(isBuilding == true){
-		ctx.drawImage(towerImg,cursor.x,cursor.y);
+		ctx.drawImage(towerImg,cursor.x-cursor.x%32,cursor.y-cursor.y%32);
+	} else{
+		ctx.drawImage(towerImg,tower.x,tower.y);
 	}
 }
 
 // 執行 draw 函式
-setInterval(draw, 16);
+setInterval(draw, 1000/FPS);
 
 var enemy = {
 	x: 96,
-	y: 480-32
+	y: 448,
+	speedX: 0,
+	speedY: -64,
+	move: function(){
+		this.x += this.speedX/FPS;
+		this.y += this.speedY/FPS;
+	}
 }
 
 var cursor = {
 	x: 100,
 	y: 200
+}
+
+var tower = {
+	x: 0,
+	y: 0
 }
 
 $("#game-canvas").on("mousemove", mousemove);
@@ -52,6 +67,12 @@ function mouseclick(){
 	if(cursor.x > 576 && cursor.y > 416){
 		isBuilding = true;
 	} else{
+		// 蓋塔
+		if(isBuilding == true){
+			tower.x = cursor.x - cursor.x%32;
+			tower.y = cursor.y - cursor.y%32;
+		}
+		// 建造完成
 		isBuilding = false;
 	}
 }
