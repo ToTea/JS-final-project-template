@@ -1,3 +1,4 @@
+var HP = 100;
 var FPS = 60;
 var clock = 0;
 // 創造 img HTML 元素，並放入變數中
@@ -5,12 +6,14 @@ var bgImg = document.createElement("img");
 var enemyImg = document.createElement("img");
 var btnImg = document.createElement("img");
 var towerImg = document.createElement("img");
+var crosshairImg = document.createElement("img");
 
 // 設定這個元素的要顯示的圖片
 bgImg.src = "images/map.png";
 enemyImg.src = "images/slime.gif";
 btnImg.src = "images/tower-btn.png";
 towerImg.src = "images/tower.png";
+crosshairImg.src = "images/crosshair.png"
 
 // 找出網頁中的 canvas 元素
 var canvas = document.getElementById("game-canvas");
@@ -27,8 +30,12 @@ function draw(){
 	// 將背景圖片畫在 canvas 上的 (0,0) 位置
 	ctx.drawImage(bgImg,0,0);
 	for(var i = 0; i < enemies.length; i++){
-		enemies[i].move();	
-		ctx.drawImage(enemyImg,enemies[i].x,enemies[i].y);
+		if(enemies[i].HP <= 0){
+			enemies.splice(i, 1);
+		}else{
+			enemies[i].move();	
+			ctx.drawImage(enemyImg,enemies[i].x,enemies[i].y);
+		}
 	}
 	ctx.drawImage(btnImg,640-64,480-64,64,64);
 	if(isBuilding == true){
@@ -36,6 +43,14 @@ function draw(){
 	} else{
 		ctx.drawImage(towerImg,tower.x,tower.y);
 	}
+	tower.searchEnemy();
+	if(tower.aimingEnemyId != null){
+		var id = tower.aimingEnemyId;
+		ctx.drawImage(crosshairImg, enemies[id].x, enemies[id].y)
+	}
+	ctx.font = "24px Arial";
+	ctx.fillStyle = "white";
+	ctx.fillText("HP: " + HP, 10, 32);
 }
 
 // 執行 draw 函式
@@ -55,6 +70,7 @@ var enemyPath = [
 function Enemy(){
 	this.x = 96;
 	this.y = 448;
+	this.HP = 10;
 	this.speedX = 0;
 	this.speedY = -64;
 	this.pathDes = 0;
@@ -70,6 +86,11 @@ function Enemy(){
 			this.y = enemyPath[this.pathDes].y;
 			// 指定
 			this.pathDes++;
+			if(this.pathDes == enemyPath.length){
+				this.HP = 0;
+				HP -= 10;
+				return;
+			}
 			// 計算, 修改
 			if( enemyPath[this.pathDes].y < this.y){
 				// 往上走
@@ -103,7 +124,21 @@ var cursor = {
 
 var tower = {
 	x: 0,
-	y: 0
+	y: 0,
+	range: 96,
+	aimingEnemyId: null,
+	searchEnemy: function(){
+		for(var i=0; i<enemies.length; i++){
+			var distance = Math.sqrt(Math.pow(this.x-enemies[i].x,2) + Math.pow(this.y-enemies[i].y,2));
+			if (distance<=this.range) {
+				this.aimingEnemyId = i;
+				return;
+			}
+		}
+		// 如果都沒找到，會進到這行，清除鎖定的目標
+		this.aimingEnemyId = null;
+	}
+
 }
 
 $("#game-canvas").on("mousemove", mousemove);
