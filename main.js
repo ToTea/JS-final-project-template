@@ -1,4 +1,6 @@
 var HP = 100;
+var score = 0;
+var money = 100;
 var FPS = 60;
 var clock = 0;
 // 創造 img HTML 元素，並放入變數中
@@ -32,6 +34,8 @@ function draw(){
 	for(var i = 0; i < enemies.length; i++){
 		if(enemies[i].HP <= 0){
 			enemies.splice(i, 1);
+			score += 10;
+			money += 30;
 		}else{
 			enemies[i].move();	
 			ctx.drawImage(enemyImg,enemies[i].x,enemies[i].y);
@@ -40,17 +44,20 @@ function draw(){
 	ctx.drawImage(btnImg,640-64,480-64,64,64);
 	if(isBuilding == true){
 		ctx.drawImage(towerImg,cursor.x-cursor.x%32,cursor.y-cursor.y%32);
-	} else{
-		ctx.drawImage(towerImg,tower.x,tower.y);
 	}
-	tower.searchEnemy();
-	if(tower.aimingEnemyId != null){
-		var id = tower.aimingEnemyId;
-		ctx.drawImage(crosshairImg, enemies[id].x, enemies[id].y)
+	for(var i = 0; i < towers.length; i++){
+		ctx.drawImage(towerImg,towers[i].x,towers[i].y);
+		towers[i].searchEnemy();
+		if(towers[i].aimingEnemyId != null){
+			var id = towers[i].aimingEnemyId;
+			ctx.drawImage(crosshairImg, enemies[id].x, enemies[id].y)
+		}
 	}
 	ctx.font = "24px Arial";
 	ctx.fillStyle = "white";
 	ctx.fillText("HP: " + HP, 10, 32);
+	ctx.fillText("Score: " + score, 10, 64);
+	ctx.fillText("Money: " + money, 10, 96);
 }
 
 // 執行 draw 函式
@@ -122,24 +129,41 @@ var cursor = {
 	y: 200
 }
 
-var tower = {
-	x: 0,
-	y: 0,
-	range: 96,
-	aimingEnemyId: null,
-	searchEnemy: function(){
+function Tower(){
+	this.x = 0;
+	this.y = 0;
+	this.range = 96;
+	this.aimingEnemyId = null;
+	this.searchEnemy = function(){
+		this.readyToShootTime -= 1/FPS;
 		for(var i=0; i<enemies.length; i++){
 			var distance = Math.sqrt(Math.pow(this.x-enemies[i].x,2) + Math.pow(this.y-enemies[i].y,2));
 			if (distance<=this.range) {
 				this.aimingEnemyId = i;
+				if(this.readyToShootTime <= 0){
+					this.shoot(i);
+					this.readyToShootTime = this.fireRate;
+				}
 				return;
 			}
 		}
 		// 如果都沒找到，會進到這行，清除鎖定的目標
 		this.aimingEnemyId = null;
-	}
-
+	};
+	this.shoot = function(id){
+		ctx.beginPath(); // 開始畫線
+		ctx.moveTo(this.x+16, this.y); // 先將畫筆移動到 (x1, y1)
+		ctx.lineTo(enemies[id].x+16, enemies[id].y+16); // 畫一條直線到 (x2, y2)
+		ctx.strokeStyle = 'red'; // 設定線條顏色
+		ctx.lineWidth = 3; // 設定線條寬度
+		ctx.stroke(); // 上色
+		enemies[id].HP -= this.damage;
+	};
+	this.fireRate = 1;
+	this.readyToShootTime = 1;
+	this.damage = 5;
 }
+var towers = [];
 
 $("#game-canvas").on("mousemove", mousemove);
 function mousemove(event){
@@ -156,8 +180,13 @@ function mouseclick(){
 	} else{
 		// 蓋塔
 		if(isBuilding == true){
-			tower.x = cursor.x - cursor.x%32;
-			tower.y = cursor.y - cursor.y%32;
+			if(money >= 10){
+				var newTower = new Tower();
+				newTower.x = cursor.x - cursor.x%32;
+				newTower.y = cursor.y - cursor.y%32;
+				towers.push(newTower);
+				money -= 10;
+			}
 		}
 		// 建造完成
 		isBuilding = false;
