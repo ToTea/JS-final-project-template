@@ -25,7 +25,7 @@ var ctx = canvas.getContext("2d");
 
 function draw(){
 	clock++;
-	if((clock%80) == 0){
+	if((clock%10) == 0){
 		var newEnemy = new Enemy();
 		enemies.push(newEnemy);
 	}
@@ -58,10 +58,18 @@ function draw(){
 	ctx.fillText("HP: " + HP, 10, 32);
 	ctx.fillText("Score: " + score, 10, 64);
 	ctx.fillText("Money: " + money, 10, 96);
+	if(HP <= 0){
+		clearInterval(intervalID);
+		ctx.font = "64px Arial";
+		ctx.fillStyle = "white";
+		ctx.fillText("Game over", 160, 160);
+		ctx.fillText("you got", 180, 240);
+		ctx.fillText(score, 240, 320);
+	}
 }
 
 // 執行 draw 函式
-setInterval(draw, 1000/FPS);
+var intervalID = setInterval(draw, 1000/FPS);
 
 var enemyPath = [
 	{x: 96, y: 448},
@@ -79,15 +87,15 @@ function Enemy(){
 	this.y = 448;
 	this.HP = 10;
 	this.speedX = 0;
-	this.speedY = -64;
+	this.speedY = -640;
 	this.pathDes = 0;
 	this.move = function(){
 		if(isCollided(enemyPath[this.pathDes].x,
 					  enemyPath[this.pathDes].y,
 					  this.x,
 					  this.y,
-					  64/FPS,
-					  64/FPS)){
+					  640/FPS,
+					  640/FPS)){
 			// 移動
 			this.x = enemyPath[this.pathDes].x;
 			this.y = enemyPath[this.pathDes].y;
@@ -102,18 +110,18 @@ function Enemy(){
 			if( enemyPath[this.pathDes].y < this.y){
 				// 往上走
 				this.speedX = 0;
-				this.speedY = -64;
+				this.speedY = -640;
 			} else if(enemyPath[this.pathDes].x > this.x){
 				// 往右走
-				this.speedX = 64;
+				this.speedX = 640;
 				this.speedY = 0;
 			} else if(enemyPath[this.pathDes].y > this.y){
 				// 往下走
 				this.speedX = 0;
-				this.speedY = 64;
+				this.speedY = 640;
 			} else if(enemyPath[this.pathDes].x < this.x){
 				// 往左走
-				this.speedX = -64;
+				this.speedX = -640;
 				this.speedY = 0;
 			}
 		}else{
